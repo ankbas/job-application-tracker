@@ -2,7 +2,7 @@ import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
 
-// IMPORTANT: dotenv.config() must run before we use process.env here
+// IMPORTANT: dotenv.config() must run before we use process.env
 dotenv.config();
 
 import authRoutes from "./src/routes/auth.js";
@@ -11,7 +11,7 @@ import { pool } from "./src/db.js";
 
 const app = express();
 
-// CORS: allow your frontend (5174)
+// CORS
 app.use(
   cors({
     origin: (process.env.CORS_ORIGIN || "http://localhost:5174")
@@ -38,8 +38,16 @@ app.get("/health", async (req, res) => {
   }
 });
 
-// Setup (creates users + per-user jobs table)
+// ✅ Setup (LOCAL ONLY) — disabled in production unless ENABLE_SETUP=true
 app.get("/setup", async (req, res) => {
+  const enabled = String(process.env.ENABLE_SETUP || "").toLowerCase() === "true";
+
+  if (!enabled) {
+    return res
+      .status(403)
+      .json({ ok: false, error: "Setup is disabled in this environment" });
+  }
+
   try {
     await pool.query(`
       CREATE TABLE IF NOT EXISTS users (
@@ -72,7 +80,7 @@ app.get("/setup", async (req, res) => {
   }
 });
 
-// ✅ Step 5 routes
+// Routes
 app.use("/auth", authRoutes);
 app.use("/jobs", jobsRoutes);
 
